@@ -1,0 +1,27 @@
+# render.yaml — Render.com deployment config
+# Deploy at https://render.com → New Web Service → Connect GitHub repo
+
+services:
+  - type: web
+    name: nexus-ai-v2
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: AI_PROVIDER
+        sync: false   # Set in Render dashboard
+      - key: CLAUDE_API_KEY
+        sync: false   # Set in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false

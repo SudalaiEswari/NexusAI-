@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NEXUS AI v2 — Multi-Agent Business Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <!-- Chart.js for graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <!-- Socket.io client -->
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
+<style>
+/* ══════════════════════════════════════════════════════════════
+   NEXUS AI v2 — Full-Feature Industrial Dark Dashboard
+══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:#0a0c10; --bg2:#10141c; --bg3:#161b26; --bg4:#1c2333;
+  --border:#1e2736; --border2:#2a3548;
+  --text:#c8d6ef; --text2:#7a8fa8; --text3:#4a5a72;
+  --analyst:#00d4ff; --analyst-bg:#00d4ff15;
+  --support:#ff6b35;  --support-bg:#ff6b3515;
+  --recruit:#a855f7;  --recruit-bg:#a855f715;
+  --research:#22c55e; --research-bg:#22c55e15;
+  --gold:#f59e0b; --danger:#ef4444; --success:#22c55e;
+  --fh:'Syne',sans-serif; --fm:'IBM Plex Mono',monospace; --fc:'Space Mono',monospace;
+  --r:6px; --r2:10px; --t:0.2s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh;line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.03)1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* ── AUTH SCREEN ─────────────────────────────────────────── */
+#authScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;position:relative;z-index:10}
+.auth-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:2.5rem;width:420px;max-width:95vw}
+.auth-logo{text-align:center;margin-bottom:2rem}
+.auth-logo-icon{font-size:2.5rem;display:block;margin-bottom:.5rem}
+.auth-logo-title{font-family:var(--fh);font-size:1.8rem;font-weight:800;letter-spacing:.1em}
+.auth-logo-sub{font-size:.65rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase}
+.auth-tabs{display:flex;gap:.25rem;margin-bottom:1.5rem}
+.auth-tab{flex:1;padding:.5rem;font-family:var(--fh);font-size:.8rem;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--text2);border-radius:var(--r);cursor:pointer;transition:all var(--t)}
+.auth-tab.active{background:var(--analyst-bg);border-color:var(--analyst);color:var(--analyst)}
+.auth-form{display:none}.auth-form.active{display:block}
+.auth-label{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.4rem;margin-top:1rem;display:block}
+.auth-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:.85rem;padding:.7rem .9rem;outline:none;transition:border-color var(--t)}
+.auth-input:focus{border-color:var(--analyst);box-shadow:0 0 0 2px rgba(0,212,255,.1)}
+.auth-btn{width:100%;margin-top:1.5rem;padding:.8rem;border:none;border-radius:var(--r);font-family:var(--fh);font-size:.9rem;font-weight:700;letter-spacing:.1em;cursor:pointer;background:var(--analyst);color:#000;transition:all var(--t)}
+.auth-btn:hover{opacity:.9} .auth-btn:active{transform:scale(.98)}
+.auth-err{margin-top:.75rem;padding:.6rem .9rem;background:rgba(239,68,68,.12);border:1px solid var(--danger);border-radius:var(--r);font-size:.75rem;color:var(--danger);display:none}
+.auth-hint{margin-top:1rem;font-size:.68rem;color:var(--text3);text-align:center;border-top:1px solid var(--border);padding-top:.75rem}
+
+/* ── MAIN APP ────────────────────────────────────────────── */
+#appScreen{display:none;position:relative;z-index:1}
+
+/* ── HEADER ──────────────────────────────────────────────── */
+.header{position:sticky;top:0;z-index:100;background:rgba(10,12,16,.96);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
+.header-inner{max-width:1400px;margin:0 auto;padding:.65rem 1.5rem;display:flex;align-items:center;gap:1.5rem}
+.logo{display:flex;align-items:center;gap:.6rem;flex-shrink:0}
+.logo-icon{font-size:1.6rem;color:var(--analyst);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.logo-title{font-family:var(--fh);font-size:1.2rem;font-weight:800;letter-spacing:.1em}
+.logo-accent{color:var(--analyst)}
+.logo-sub{font-size:.58rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+.nav-tabs{display:flex;gap:.2rem;flex:1;justify-content:center;flex-wrap:wrap}
+.nav-btn{font-family:var(--fh);font-size:.75rem;font-weight:600;letter-spacing:.04em;padding:.45rem 1rem;border:1px solid var(--border);background:transparent;color:var(--text2);border-radius:var(--r);cursor:pointer;transition:all var(--t)}
+.nav-btn:hover{color:var(--text);border-color:var(--border2)}
+.nav-btn.active[data-tab=analyst]    {background:var(--analyst-bg);border-color:var(--analyst);color:var(--analyst)}
+.nav-btn.active[data-tab=support]    {background:var(--support-bg);border-color:var(--support);color:var(--support)}
+.nav-btn.active[data-tab=recruitment]{background:var(--recruit-bg);border-color:var(--recruit);color:var(--recruit)}
+.nav-btn.active[data-tab=research]   {background:var(--research-bg);border-color:var(--research);color:var(--research)}
+.header-right{display:flex;align-items:center;gap:.75rem;flex-shrink:0}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);transition:background .5s;flex-shrink:0}
+.status-dot.online{background:var(--success);box-shadow:0 0 8px var(--success);animation:blink 2s infinite}
+.status-dot.offline{background:var(--danger)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+#statusText{font-size:.65rem;color:var(--text2)}
+
+/* ── USER MENU ───────────────────────────────────────────── */
+.user-menu{position:relative}
+.user-btn{display:flex;align-items:center;gap:.4rem;padding:.35rem .7rem;border:1px solid var(--border);background:transparent;color:var(--text2);border-radius:var(--r);cursor:pointer;font-family:var(--fm);font-size:.72rem;transition:all var(--t)}
+.user-btn:hover{border-color:var(--border2);color:var(--text)}
+.user-avatar{width:22px;height:22px;border-radius:50%;background:var(--analyst-bg);border:1px solid var(--analyst);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--analyst)}
+.user-dropdown{position:absolute;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);min-width:180px;z-index:200;display:none;overflow:hidden}
+.user-dropdown.open{display:block;animation:fadeIn .15s ease}
+.dropdown-item{display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem;font-size:.75rem;color:var(--text2);cursor:pointer;transition:background var(--t)}
+.dropdown-item:hover{background:var(--bg3);color:var(--text)}
+.dropdown-item.danger:hover{color:var(--danger)}
+.dropdown-divider{height:1px;background:var(--border);margin:.25rem 0}
+
+/* ── LANG SELECTOR ───────────────────────────────────────── */
+.lang-select{background:var(--bg);border:1px solid var(--border);color:var(--text2);font-family:var(--fm);font-size:.65rem;padding:.3rem .5rem;border-radius:var(--r);cursor:pointer;outline:none}
+.lang-select:focus{border-color:var(--analyst)}
+
+/* ── NOTIFICATIONS ───────────────────────────────────────── */
+.notif-btn{position:relative;background:transparent;border:1px solid var(--border);border-radius:var(--r);padding:.35rem .55rem;cursor:pointer;color:var(--text2);font-size:.85rem;transition:all var(--t)}
+.notif-btn:hover{border-color:var(--border2);color:var(--text)}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;border-radius:50%;width:16px;height:16px;font-size:.55rem;display:flex;align-items:center;justify-content:center;display:none}
+.notif-panel{position:absolute;right:0;top:calc(100% + 8px);width:320px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);z-index:200;display:none;max-height:380px;overflow-y:auto}
+.notif-panel.open{display:block;animation:fadeIn .15s ease}
+.notif-header{padding:.75rem 1rem;font-family:var(--fh);font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--text3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.notif-item{padding:.7rem 1rem;border-bottom:1px solid var(--border);font-size:.73rem}
+.notif-item.unread{background:var(--bg3)}
+.notif-title{font-weight:600;color:var(--text);margin-bottom:.15rem}
+.notif-msg{color:var(--text2);font-size:.68rem}
+.notif-time{color:var(--text3);font-size:.62rem;margin-top:.15rem}
+.notif-empty{padding:1.5rem;text-align:center;color:var(--text3);font-size:.75rem}
+
+/* ── STATS BAR ───────────────────────────────────────────── */
+.stats-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);overflow-x:auto}
+.stat-chip{flex:1;min-width:110px;padding:.55rem 1.2rem;display:flex;flex-direction:column;align-items:center;border-right:1px solid var(--border)}
+.stat-label{font-size:.57rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
+.stat-val{font-family:var(--fh);font-size:.9rem;font-weight:700;color:var(--analyst);margin-top:.1rem;transition:all .3s}
+.stat-val.updated{color:var(--success)}
+
+/* ── MAIN CONTENT ────────────────────────────────────────── */
+.main{max-width:1400px;margin:0 auto;padding:1.25rem;position:relative;z-index:1}
+.tab-content{display:none}.tab-content.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── AGENT HEADER ────────────────────────────────────────── */
+.agent-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.1rem;padding-bottom:.9rem;border-bottom:1px solid var(--border)}
+.agent-badge{width:48px;height:48px;border-radius:var(--r2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.analyst-badge{background:var(--analyst-bg);border:1px solid var(--analyst)}
+.support-badge{background:var(--support-bg);border:1px solid var(--support)}
+.recruit-badge{background:var(--recruit-bg);border:1px solid var(--recruit)}
+.research-badge{background:var(--research-bg);border:1px solid var(--research)}
+.agent-title{font-family:var(--fh);font-size:1.3rem;font-weight:800;letter-spacing:.03em}
+.agent-desc{font-size:.72rem;color:var(--text2);margin-top:.1rem}
+
+/* ── LAYOUT ──────────────────────────────────────────────── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+@media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr}}
+
+/* ── PANEL ───────────────────────────────────────────────── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:1.1rem}
+.panel-label{font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:.5rem}
+.panel-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
+
+/* ── INPUTS ──────────────────────────────────────────────── */
+.input,.textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--fm);font-size:.8rem;padding:.6rem .85rem;transition:border-color var(--t);outline:none;resize:vertical}
+.input:focus,.textarea:focus{border-color:var(--analyst);box-shadow:0 0 0 2px rgba(0,212,255,.08)}
+select.input{cursor:pointer}
+.file-input-wrap{position:relative;margin-top:.5rem}
+.file-label{display:flex;align-items:center;gap:.5rem;padding:.6rem .85rem;background:var(--bg);border:1px dashed var(--border2);border-radius:var(--r);cursor:pointer;font-size:.75rem;color:var(--text2);transition:all var(--t)}
+.file-label:hover{border-color:var(--recruit);color:var(--recruit)}
+.file-label.has-file{border-color:var(--success);color:var(--success);border-style:solid}
+input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn{width:100%;margin-top:.85rem;padding:.7rem 1.2rem;border:none;border-radius:var(--r);font-family:var(--fh);font-size:.82rem;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:all var(--t);position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.1);opacity:0;transition:opacity var(--t)}
+.btn:hover::after{opacity:1}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-analyst{background:var(--analyst);color:#000}.btn-support{background:var(--support);color:#fff}
+.btn-recruit{background:var(--recruit);color:#fff}.btn-research{background:var(--research);color:#000}
+.btn-sm{padding:.3rem .7rem;font-size:.68rem;border:1px solid var(--border2);background:transparent;color:var(--text2);border-radius:var(--r);cursor:pointer;font-family:var(--fm);transition:all var(--t)}
+.btn-sm:hover{border-color:var(--analyst);color:var(--analyst)}
+
+/* ── CHART CONTAINER ─────────────────────────────────────── */
+.chart-wrap{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:1rem;position:relative;height:220px}
+.chart-wrap canvas{max-height:100%}
+.chart-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1rem}
+@media(max-width:900px){.chart-row{grid-template-columns:1fr}}
+
+/* ── CODE BLOCK ──────────────────────────────────────────── */
+.code-block{background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--analyst);border-radius:var(--r);padding:.7rem .9rem;font-family:var(--fc);font-size:.7rem;color:#7dd3fc;white-space:pre-wrap;word-break:break-all;min-height:55px;max-height:130px;overflow-y:auto}
+
+/* ── RESULT BOX ──────────────────────────────────────────── */
+.result-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:.9rem;min-height:110px;font-size:.8rem;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.result-box.tall{min-height:260px}
+.placeholder-text{color:var(--text3);font-style:italic;font-size:.75rem}
+
+/* ── TABLE ───────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto}
+.data-table{width:100%;border-collapse:collapse;font-size:.72rem}
+.data-table th{background:var(--bg3);border:1px solid var(--border);padding:.45rem .7rem;text-align:left;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);font-family:var(--fh);font-weight:600}
+.data-table td{border:1px solid var(--border);padding:.4rem .7rem;color:var(--text);background:var(--bg2)}
+.data-table tr:hover td{background:var(--bg3)}
+
+/* ── BADGES ──────────────────────────────────────────────── */
+.badge{display:inline-block;padding:.12rem .45rem;background:var(--analyst-bg);border:1px solid var(--analyst);border-radius:20px;font-size:.58rem;color:var(--analyst);letter-spacing:.04em}
+.badge-high{background:rgba(239,68,68,.15);border-color:var(--danger);color:var(--danger)}
+.badge-medium{background:rgba(245,158,11,.15);border-color:var(--gold);color:var(--gold)}
+.badge-low{background:rgba(34,197,94,.15);border-color:var(--success);color:var(--success)}
+.badge-open{background:rgba(0,212,255,.12);border-color:var(--analyst);color:var(--analyst)}
+.badge-resolved{background:rgba(34,197,94,.12);border-color:var(--success);color:var(--success)}
+.badge-progress{background:rgba(245,158,11,.12);border-color:var(--gold);color:var(--gold)}
+
+/* ── QUICK PROMPTS ───────────────────────────────────────── */
+.quick-prompts{margin:.65rem 0;display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+.quick-label{font-size:.58rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;width:100%}
+.quick-btn{padding:.25rem .65rem;font-family:var(--fm);font-size:.65rem;border:1px solid var(--border2);background:transparent;color:var(--text2);border-radius:20px;cursor:pointer;transition:all var(--t)}
+.quick-btn:hover{border-color:var(--analyst);color:var(--analyst)}
+
+/* ── TICKET CARD ─────────────────────────────────────────── */
+.ticket-card{margin-top:.85rem;background:var(--bg);border:1px solid var(--support);border-left:3px solid var(--support);border-radius:var(--r);padding:.7rem .9rem}
+.ticket-header{font-family:var(--fh);font-size:.66rem;font-weight:700;letter-spacing:.1em;color:var(--support);margin-bottom:.45rem}
+.ticket-row{display:flex;justify-content:space-between;font-size:.72rem;padding:.18rem 0;color:var(--text2);border-bottom:1px solid var(--border)}
+.ticket-row:last-child{border-bottom:none}.ticket-row strong{color:var(--text)}
+
+/* ── SCORE CARD ──────────────────────────────────────────── */
+.score-card{display:flex;flex-direction:column;align-items:center;gap:.45rem;padding:1.2rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:.85rem}
+.score-circle{width:82px;height:82px;border-radius:50%;border:3px solid var(--recruit);display:flex;align-items:center;justify-content:center;flex-direction:column;background:var(--recruit-bg);box-shadow:0 0 18px rgba(168,85,247,.25)}
+#scoreValue{font-family:var(--fh);font-size:1.7rem;font-weight:800;color:var(--recruit);line-height:1}
+.score-lbl{font-size:.6rem;color:var(--text2)}
+.score-status{font-family:var(--fh);font-size:.95rem;font-weight:700}
+.score-role{font-size:.68rem;color:var(--text2)}
+
+/* ── MISC ────────────────────────────────────────────────── */
+.two-input-row{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-top:.4rem}
+.source-item{padding:.45rem;border:1px solid var(--border);border-radius:var(--r);margin-bottom:.4rem;background:var(--bg)}
+.source-title{font-size:.7rem;color:var(--research);font-weight:500}
+.source-url{font-size:.6rem;color:var(--text3);margin:.1rem 0}
+.source-badge{font-size:.55rem;color:var(--text3);padding:.1rem .4rem;border:1px solid var(--border);border-radius:10px;display:inline-block}
+.source-summary{font-size:.67rem;color:var(--text2);margin-top:.2rem}
+.success-msg{margin-top:.7rem;padding:.6rem .9rem;background:rgba(34,197,94,.1);border:1px solid var(--success);border-radius:var(--r);font-size:.72rem;color:var(--success)}
+.report-meta{margin-top:.45rem;font-size:.62rem;color:var(--text3);display:flex;justify-content:space-between;align-items:center}
+.provider-tag{padding:.1rem .4rem;border:1px solid var(--border2);border-radius:10px;font-size:.6rem;color:var(--research)}
+
+/* ── LIVE UPDATE TOAST ───────────────────────────────────── */
+.toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+.toast{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:.75rem 1rem;font-size:.75rem;min-width:260px;max-width:320px;animation:slideIn .3s ease;pointer-events:all;display:flex;gap:.5rem;align-items:flex-start}
+.toast.success{border-color:var(--success)}
+.toast.info{border-color:var(--analyst)}
+.toast.warning{border-color:var(--gold)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.toast-icon{flex-shrink:0;font-size:1rem}
+.toast-body{flex:1}
+.toast-title{font-weight:600;color:var(--text);margin-bottom:.1rem}
+.toast-msg{color:var(--text2);font-size:.68rem}
+
+/* ── LOADING OVERLAY ─────────────────────────────────────── */
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(10,12,16,.88);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.loading-overlay.show{display:flex}
+.loading-box{text-align:center;padding:2.2rem 2.8rem;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);box-shadow:0 0 40px rgba(0,212,255,.08)}
+.spinner{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--analyst);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto .9rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:var(--fh);font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:.2rem}
+.loading-sub{font-size:.7rem;color:var(--text2)}
+
+/* ── SAVED REPORTS LIST ──────────────────────────────────── */
+.report-list-item{padding:.5rem .75rem;border:1px solid var(--border);border-radius:var(--r);margin-bottom:.35rem;background:var(--bg);cursor:pointer;transition:all var(--t);display:flex;justify-content:space-between;align-items:center;font-size:.72rem}
+.report-list-item:hover{border-color:var(--research);color:var(--research)}
+
+.mic-btn{background:transparent;border:none;cursor:pointer;font-size:1.1rem;padding:.2rem;margin-left:.5rem;transition:transform var(--t);display:inline-flex;align-items:center;justify-content:center;vertical-align:middle}.mic-btn:hover{transform:scale(1.2)}.mic-btn.listening{color:var(--danger);animation:micPulse 1.5s infinite}@keyframes micPulse{0%{transform:scale(1);text-shadow:0 0 0 rgba(239,68,68,0)}50%{transform:scale(1.3);text-shadow:0 0 10px rgba(239,68,68,.5)}100%{transform:scale(1);text-shadow:0 0 0 rgba(239,68,68,0)}}
+
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     AUTH SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <span class="auth-logo-icon">⬡</span>
+      <div class="auth-logo-title">NEXUS<span style="color:var(--analyst)">AI</span></div>
+      <div class="auth-logo-sub">Multi-Agent Business Hub v2</div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="auth-form active" id="loginForm">
+      <label class="auth-label">Email</label>
+      <input type="email" id="loginEmail" class="auth-input" placeholder="admin@nexusai.com" value="admin@nexusai.com"/>
+      <label class="auth-label">Password</label>
+      <input type="password" id="loginPass" class="auth-input" placeholder="••••••••" value="admin123"/>
+      <button class="auth-btn" onclick="doLogin()">🔐 LOGIN</button>
+      
+      <div style="margin-top:1.2rem; display:flex; flex-direction:column; gap:0.5rem;">
+        <div class="auth-label" style="margin-top:0; text-align:center;">Select User to Login</div>
+        <select id="quickLoginSelect" class="auth-input" style="font-size:0.75rem; padding:0.5rem;" onchange="fastLogin(this.value)">
+          <option value="">— Choose a User —</option>
+        </select>
+      </div>
+
+      <div class="auth-err" id="loginErr"></div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="auth-form" id="registerForm">
+      <label class="auth-label">Full Name</label>
+      <input type="text" id="regName" class="auth-input" placeholder="Your name"/>
+      <label class="auth-label">Email</label>
+      <input type="email" id="regEmail" class="auth-input" placeholder="you@example.com"/>
+      <label class="auth-label">Password</label>
+      <input type="password" id="regPass" class="auth-input" placeholder="Min 6 characters"/>
+      <button class="auth-btn" onclick="doRegister()">✨ CREATE ACCOUNT</button>
+      <div class="auth-err" id="registerErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MAIN APP (shown after login)
+══════════════════════════════════════════════════════════ -->
+<div id="appScreen">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">⬡</span>
+      <div>
+        <div class="logo-title">NEXUS<span class="logo-accent">AI</span> <span style="font-size:.7rem;opacity:.5">v2</span></div>
+        <div class="logo-sub">Multi-Agent Hub</div>
+      </div>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-btn active" data-tab="analyst"     data-i18n="analyst" onclick="switchTab('analyst')">🧠 Analyst</button>
+      <button class="nav-btn"        data-tab="support"     data-i18n="support" onclick="switchTab('support')">🎧 Support</button>
+      <button class="nav-btn"        data-tab="recruitment" data-i18n="recruit" onclick="switchTab('recruitment')">👔 Recruit</button>
+      <button class="nav-btn"        data-tab="research"    data-i18n="research" onclick="switchTab('research')">🔍 Research</button>
+    </nav>
+    <div class="header-right">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText" style="font-size:.65rem;color:var(--text2)">—</span>
+
+      <!-- Language selector -->
+      <select class="lang-select" id="langSelect" onchange="changeLang(this.value)">
+        <option value="en">🇬🇧 EN</option>
+        <option value="ta">🇮🇳 TA</option>
+        <option value="hi">🇮🇳 HI</option>
+        <option value="te">🇮🇳 TE</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="de">🇩🇪 DE</option>
+        <option value="ja">🇯🇵 JA</option>
+        <option value="zh">🇨🇳 ZH</option>
+      </select>
+
+      <!-- Notification bell -->
+      <div class="user-menu">
+        <button class="notif-btn" onclick="toggleNotifPanel()" id="notifBtn">
+          🔔 <span class="notif-badge" id="notifBadge">0</span>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-header">
+            <span>LIVE NOTIFICATIONS</span>
+            <button class="btn-sm" onclick="clearNotifications()">Clear all</button>
+          </div>
+          <div id="notifList"><div class="notif-empty">No notifications yet</div></div>
+        </div>
+      </div>
+
+      <!-- User menu -->
+      <div class="user-menu">
+        <button class="user-btn" onclick="toggleUserMenu()">
+          <div class="user-avatar" id="userAvatar">A</div>
+          <span id="userNameLabel">User</span> ▾
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dropdown-item">👤 <span id="dropdownName">—</span></div>
+          <div class="dropdown-item" style="font-size:.65rem;color:var(--text3)" id="dropdownEmail">—</div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item danger" data-i18n="logout" onclick="doLogout()">🚪 Logout</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-chip"><span class="stat-label" data-i18n="rev">Revenue</span><span class="stat-val" id="statRevenue">—</span></div>
+  <div class="stat-chip"><span class="stat-label" data-i18n="ord">Orders</span><span class="stat-val" id="statOrders">—</span></div>
+  <div class="stat-chip"><span class="stat-label" data-i18n="tkt">Open Tickets</span><span class="stat-val" id="statTickets">—</span></div>
+  <div class="stat-chip"><span class="stat-label" data-i18n="cand">Candidates</span><span class="stat-val" id="statCandidates">—</span></div>
+  <div class="stat-chip"><span class="stat-label" data-i18n="avg">Avg Score</span><span class="stat-val" id="statAvgScore">—</span></div>
+  <div class="stat-chip"><span class="stat-label">Search</span><span class="stat-val" id="statSearch" style="font-size:.65rem">—</span></div>
+</div>
+
+<main class="main">
+
+<!-- ═══ TAB 1: ANALYST ════════════════════════════════════ -->
+<div class="tab-content active" id="tab-analyst">
+  <div class="agent-header">
+    <div class="agent-badge analyst-badge">🧠</div>
+    <div><h2 class="agent-title">Analyst Agent</h2>
+    <p class="agent-desc">Natural language → SQL → AI insights + interactive charts</p></div>
+  </div>
+
+  <!-- Dashboard Charts Row -->
+  <div class="chart-row" style="margin-bottom:1rem">
+    <div class="panel">
+      <div class="panel-label">Revenue by Product</div>
+      <div class="chart-wrap"><canvas id="chartProduct"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">Sales by Region</div>
+      <div class="chart-wrap"><canvas id="chartRegion"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">Monthly Sales Trend</div>
+      <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-label" data-i18n="ask">Ask Your Question <button class="mic-btn" onclick="startVoice('analystQ')" title="Speak your question">🎙️</button></div>
+      <textarea id="analystQ" class="textarea" rows="4" placeholder="e.g. What is the total revenue by product?&#10;Which region has highest sales?&#10;Show monthly revenue for Q1 2024"></textarea>
+      <div class="quick-prompts">
+        <div class="quick-label">Quick questions:</div>
+        <button class="quick-btn" onclick="setQ('What is the total revenue by product?')">Revenue by product</button>
+        <button class="quick-btn" onclick="setQ('Which region has the highest sales?')">Top region</button>
+        <button class="quick-btn" onclick="setQ('Who is the top salesperson by revenue?')">Top salesperson</button>
+        <button class="quick-btn" onclick="setQ('Show monthly sales summary')">Monthly sales</button>
+        <button class="quick-btn" onclick="setQ('How many units of each product were sold?')">Units sold</button>
+      </div>
+      <button class="btn btn-analyst" data-i18n="analyze_btn" onclick="runAnalyst()" id="analystBtn">⚡ ANALYZE</button>
+    </div>
+    <div class="panel">
+      <div class="panel-label" data-i18n="gen_sql">Generated SQL</div>
+      <pre class="code-block" id="analystSQL">— SQL will appear here —</pre>
+      <div class="panel-label" style="margin-top:.85rem">Results <span id="analystCount" class="badge"></span></div>
+      <div class="table-wrap" id="analystTable"><div class="placeholder-text">Run a query to see data</div></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:1rem">
+    <div class="panel-label-row">
+      <div class="panel-label" data-i18n="insights">🤖 AI Business Insights</div>
+      <div>
+        <span id="analystChartType" class="badge" style="display:none;margin-right:0.5rem"></span>
+        <button class="btn-sm" id="exportAnalystBtn" onclick="exportAnalystPDF()" style="display:none">📥 Export PDF</button>
+      </div>
+    </div>
+    <div class="result-box" id="analystInsights"><div class="placeholder-text">AI insights will appear here...</div></div>
+    <div class="chart-wrap" id="queryChartWrap" style="display:none;margin-top:.85rem;height:200px"><canvas id="queryChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ TAB 2: SUPPORT ════════════════════════════════════ -->
+<div class="tab-content" id="tab-support">
+  <div class="agent-header">
+    <div class="agent-badge support-badge">🎧</div>
+    <div><h2 class="agent-title">Support Agent</h2>
+    <p class="agent-desc">AI support · auto tickets · email alerts · real-time updates</p></div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-label" data-i18n="cust_name">Customer Name</div>
+      <input type="text" id="supCust" class="input" placeholder="e.g. Arun Kumar"/>
+      <div class="panel-label" style="margin-top:.75rem">Customer Email (for notification)</div>
+      <input type="email" id="supEmail" class="input" placeholder="customer@email.com"/>
+      <div class="panel-label" style="margin-top:.75rem" data-i18n="cust_issue">Describe the Issue <button class="mic-btn" onclick="startVoice('supIssue')" title="Speak the issue">🎙️</button></div>
+      <textarea id="supIssue" class="textarea" rows="4" placeholder="Describe the customer's issue..."></textarea>
+      <div class="quick-prompts">
+        <div class="quick-label">Sample issues:</div>
+        <button class="quick-btn" onclick="setIssue('Cannot login after password reset')">Login issue</button>
+        <button class="quick-btn" onclick="setIssue('Invoice not generated for last month')">Billing</button>
+        <button class="quick-btn" onclick="setIssue('API rate limit exceeded unexpectedly')">API limit</button>
+        <button class="quick-btn" onclick="setIssue('Need to upgrade to Pro plan')">Upgrade</button>
+      </div>
+      <button class="btn btn-support" data-i18n="submit_btn" onclick="runSupport()" id="supportBtn">💬 SUBMIT ISSUE</button>
+    </div>
+    <div class="panel">
+      <div class="panel-label">🤖 Agent Response</div>
+      <div class="result-box" id="supResponse"><div class="placeholder-text">Response will appear here...</div></div>
+      <div id="ticketCard" style="display:none" class="ticket-card">
+        <div class="ticket-header">🎫 TICKET CREATED</div>
+        <div class="ticket-row"><span>ID:</span><strong id="tktId">—</strong></div>
+        <div class="ticket-row"><span>Priority:</span><strong id="tktPri">—</strong></div>
+        <div class="ticket-row"><span>Status:</span><strong>Open</strong></div>
+        <div class="ticket-row"><span>Email Sent:</span><strong id="tktEmail">—</strong></div>
+        <div class="ticket-row"><span>Date:</span><strong id="tktDate">—</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ticket status chart -->
+  <div class="two-col" style="margin-top:1rem">
+    <div class="panel">
+      <div class="panel-label">Ticket Status Distribution</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartTickets"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label-row">
+        <div class="panel-label">All Tickets</div>
+        <button class="btn-sm" onclick="loadTickets()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap" id="ticketsTable"><div class="placeholder-text">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 3: RECRUITMENT ═══════════════════════════════ -->
+<div class="tab-content" id="tab-recruitment">
+  <div class="agent-header">
+    <div class="agent-badge recruit-badge">👔</div>
+    <div><h2 class="agent-title">Recruitment Agent</h2>
+    <p class="agent-desc">Resume upload · AI scoring · PDF/DOCX parsing · interview emails</p></div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-label">Candidate Profile</div>
+      <input type="text" id="cName"  class="input" placeholder="Full Name *"/>
+      <input type="email" id="cEmail" class="input" placeholder="Email (for interview notification)" style="margin-top:.4rem"/>
+      <input type="text" id="cPhone" class="input" placeholder="Phone" style="margin-top:.4rem"/>
+
+      <!-- File Upload -->
+      <div class="panel-label" style="margin-top:.75rem">Upload Resume (PDF / DOCX / TXT)</div>
+      <div class="file-input-wrap">
+        <label class="file-label" id="fileLabel">
+          📎 Click to upload resume file (auto-parses skills & experience)
+        </label>
+        <input type="file" id="recruitResume" accept=".pdf,.docx,.doc,.txt" onchange="handleFileSelect(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer"/>
+        <button id="clearResumeBtn" class="btn-sm" style="display:none; margin-top:0.4rem; border-color:var(--danger); color:var(--danger); position:relative; z-index:5;" onclick="clearResume()">🗑️ Clear Resume</button>
+      </div>
+
+      <div class="panel-label" style="margin-top:.75rem">Skills (comma separated) — or upload resume above</div>
+      <textarea id="cSkills" class="textarea" rows="2" placeholder="Python, React, Node.js, SQL..."></textarea>
+
+      <div class="two-input-row">
+        <div>
+          <div class="panel-label">Experience (years)</div>
+          <input type="number" id="cExp" class="input" placeholder="e.g. 3" min="0" max="50"/>
+        </div>
+        <div>
+          <div class="panel-label">Applied Role *</div>
+          <select id="cRole" class="input">
+            <option value="">Select Role</option>
+            <option>Data Scientist</option><option>Full Stack Developer</option>
+            <option>Backend Engineer</option><option>Frontend Developer</option>
+            <option>UI/UX Designer</option><option>DevOps Engineer</option>
+            <option>Backend Developer</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-label" style="margin-top:.4rem">Education</div>
+      <input type="text" id="cEdu" class="input" placeholder="e.g. B.Tech Computer Science"/>
+      <button class="btn btn-recruit" data-i18n="evaluate_btn" onclick="runEvaluate()" id="recruitBtn">⚡ EVALUATE CANDIDATE</button>
+    </div>
+
+    <div class="panel">
+    <div class="panel-label-row">
+      <div class="panel-label">📊 Evaluation Result</div>
+      <button class="btn-sm" id="exportRecruitBtn" onclick="exportRecruitmentPDF()" style="display:none">📥 Export PDF</button>
+    </div>
+      <div id="scoreCard" style="display:none" class="score-card">
+        <div class="score-circle"><span id="scoreValue">0</span><span class="score-lbl">/100</span></div>
+        <div class="score-status" id="scoreStatus">—</div>
+        <div class="score-role" id="scoreRole">—</div>
+      </div>
+      <div id="parsedInfo" style="display:none;margin-bottom:.75rem;padding:.5rem .75rem;background:var(--bg);border:1px solid var(--research);border-radius:var(--r);font-size:.7rem;color:var(--text2)">
+        📄 <strong style="color:var(--research)">Parsed from resume:</strong> <span id="parsedDetail"></span>
+      </div>
+      <div class="result-box" id="recruitResult"><div class="placeholder-text">Evaluation will appear here...</div></div>
+      <div id="scheduleSection" style="display:none">
+        <div class="panel-label" style="margin-top:.85rem">📅 Schedule Interview</div>
+        <input type="datetime-local" id="iDate" class="input"/>
+        <input type="text" id="iInterviewer" class="input" placeholder="Interviewer name" style="margin-top:.4rem"/>
+        <select id="iMode" class="input" style="margin-top:.4rem">
+          <option value="Online">Online (Zoom / Meet)</option>
+          <option value="Offline">In-Person</option>
+          <option value="Phone">Phone Call</option>
+        </select>
+        <button class="btn btn-recruit" onclick="runSchedule()" style="margin-top:.4rem">📅 SCHEDULE + SEND EMAIL</button>
+        <div id="scheduleResult" class="success-msg" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:1rem">
+    <div class="panel">
+      <div class="panel-label">Avg Score by Role</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartCandidates"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label-row">
+        <div class="panel-label">All Candidates</div>
+        <button class="btn-sm" onclick="loadCandidates()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap" id="candidatesTable"><div class="placeholder-text">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 4: RESEARCH ═══════════════════════════════════ -->
+<div class="tab-content" id="tab-research">
+  <div class="agent-header">
+    <div class="agent-badge research-badge">🔍</div>
+    <div><h2 class="agent-title">Research Agent</h2>
+    <p class="agent-desc">Real web search (Tavily) · multi-source synthesis · saved reports</p></div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-label" data-i18n="research_topic">Research Topic <button class="mic-btn" onclick="startVoice('resTopic')" title="Speak the topic">🎙️</button></div>
+      <input type="text" id="resTopic" class="input" placeholder="e.g. AI market trends in India 2024"/>
+      <div class="quick-prompts">
+        <div class="quick-label">Suggested topics:</div>
+        <button class="quick-btn" onclick="setTopic('AI and Machine Learning in business 2024')">AI in Business</button>
+        <button class="quick-btn" onclick="setTopic('India startup ecosystem 2024')">India Startups</button>
+        <button class="quick-btn" onclick="setTopic('E-commerce market trends')">E-commerce</button>
+        <button class="quick-btn" onclick="setTopic('Cybersecurity challenges for SMEs')">Cybersecurity</button>
+        <button class="quick-btn" onclick="setTopic('Electric vehicle market in India')">EV Market</button>
+        <button class="quick-btn" onclick="setTopic('Fintech innovations 2024')">Fintech</button>
+      </div>
+      <button class="btn btn-research" onclick="runResearch()" id="researchBtn">🔍 START RESEARCH</button>
+
+      <!-- Saved reports -->
+      <div style="margin-top:1rem">
+        <div class="panel-label-row">
+          <div class="panel-label">📂 Saved Reports</div>
+          <button class="btn-sm" onclick="loadSavedReports()">↻</button>
+        </div>
+        <div id="savedReportsList"><div class="placeholder-text">No saved reports yet</div></div>
+      </div>
+
+      <!-- Sources panel -->
+      <div id="sourcesPanel" style="display:none;margin-top:.85rem">
+        <div class="panel-label">📚 Sources Reviewed</div>
+        <div id="sourcesList"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">📄 Research Report</div>
+      <div class="result-box tall" id="resReport"><div class="placeholder-text">Research report will appear here...</div></div>
+      <div id="reportMeta" style="display:none" class="report-meta">
+        <span id="reportTime"></span>
+        <span class="provider-tag" id="reportProvider"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- /appScreen -->
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Processing...</div>
+    <div class="loading-sub" id="loadingSub">AI agent is working</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT — Complete frontend logic
+══════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+// ─── CONFIG ───────────────────────────────────────────────────
+const API  = 'http://localhost:3001/api';
+let TOKEN  = localStorage.getItem('nexus_token') || '';
+let USER   = JSON.parse(localStorage.getItem('nexus_user') || 'null');
+let SOCKET = null;
+let lastCandidateId = null;
+const charts = {};  // Store Chart.js instances
+const notifications = [];
+let lastAnalystData = null; // Store for PDF export
+
+// ─── AUTH HELPERS ─────────────────────────────────────────────
+const headers = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${TOKEN}` });
+
+async function apiFetch(path, opts = {}) {
+  const r = await fetch(API + path, { headers: headers(), ...opts });
+  const d = await r.json();
+  if (r.status === 401) { doLogout(); return null; }
+  return d;
+}
+
+// ─── AUTH SCREEN ──────────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('loginForm').classList.toggle('active', tab==='login');
+  document.getElementById('registerForm').classList.toggle('active', tab==='register');
+}
+
+async function loadQuickLoginUsers() {
+  try {
+    const r = await fetch(`${API}/auth/users`);
+    const d = await r.json();
+    if (d.success) {
+      const sel = document.getElementById('quickLoginSelect');
+      sel.innerHTML = '<option value="">— Choose a User —</option>';
+      d.users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.email;
+        opt.textContent = `${u.role === 'admin' ? '🛡️' : '👤'} ${u.name} (${u.email})`;
+        sel.appendChild(opt);
+      });
+    }
+  } catch (e) {
+    console.warn("Failed to load user list for quick login", e);
+  }
+}
+
+async function fastLogin(email) {
+  if (!email) return;
+  const errEl = document.getElementById('loginErr');
+  errEl.style.display = 'none';
+
+  try {
+    const r = await fetch(`${API}/auth/login-fast`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'Login failed'; errEl.style.display='block'; return; }
+
+    TOKEN = d.token;
+    USER  = d.user;
+    localStorage.setItem('nexus_token', TOKEN);
+    localStorage.setItem('nexus_user',  JSON.stringify(USER));
+    showApp();
+  } catch { errEl.textContent = 'Connection error.'; errEl.style.display='block'; }
+}
+
+function setLogin(email, pass) {
+  document.getElementById('loginEmail').value = email;
+  document.getElementById('loginPass').value = pass;
+  doLogin();
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.style.display = 'none';
+
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password: pass })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'Login failed'; errEl.style.display='block'; return; }
+
+    TOKEN = d.token;
+    USER  = d.user;
+    localStorage.setItem('nexus_token', TOKEN);
+    localStorage.setItem('nexus_user',  JSON.stringify(USER));
+    showApp();
+  } catch { errEl.textContent = 'Cannot connect to server. Start backend first.'; errEl.style.display='block'; }
+}
+
+async function doRegister() {
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass  = document.getElementById('regPass').value;
+  const errEl = document.getElementById('registerErr');
+  errEl.style.display = 'none';
+
+  if (!name || !email || !pass) { errEl.textContent = 'All fields required'; errEl.style.display='block'; return; }
+
+  try {
+    const r = await fetch(`${API}/auth/register`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email, password: pass })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'Registration failed'; errEl.style.display='block'; return; }
+
+    TOKEN = d.token;
+    USER  = d.user;
+    localStorage.setItem('nexus_token', TOKEN);
+    localStorage.setItem('nexus_user',  JSON.stringify(USER));
+    showApp();
+  } catch { errEl.textContent = 'Cannot connect to server.'; errEl.style.display='block'; }
+}
+
+function doLogout() {
+  localStorage.removeItem('nexus_token');
+  localStorage.removeItem('nexus_user');
+  TOKEN = ''; USER = null;
+  if (SOCKET) SOCKET.disconnect();
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('appScreen').style.display  = 'none';
+}
+
+// ─── SHOW APP AFTER LOGIN ─────────────────────────────────────
+function showApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display  = 'block';
+  
+  // Update user UI
+  document.getElementById('userNameLabel').textContent = USER.name.split(' ')[0];
+  document.getElementById('userAvatar').textContent    = USER.name[0].toUpperCase();
+  document.getElementById('dropdownName').textContent  = USER.name;
+  document.getElementById('dropdownEmail').textContent = USER.email;
+  if (USER.lang) { 
+    document.getElementById('langSelect').value = USER.lang; 
+    translateUI(USER.lang);
+  }
+
+  initSocket();
+  checkServerStatus();
+  loadStats();
+  loadDashboardCharts();
+  checkAIProvider();
+}
+
+async function checkAIProvider() {
+  try {
+    const r = await fetch(`${API}/health`, { headers: headers() });
+    const d = await r.json();
+    if (d.aiProvider === 'gemini') {
+       // Check if Gemini actually works by doing a tiny analyst query
+       const test = await fetch(`${API}/analyst/query`, {
+         method: 'POST', headers: headers(),
+         body: JSON.stringify({ question: 'internal check' })
+       });
+       const data = await test.json();
+       if (data.insights && data.insights.includes('fallback')) {
+         showToast('⚠️ AI Warning', 'Using Mock fallback (Gemini API 404)', 'warning');
+         document.getElementById('statusText').innerHTML += ' <span style="color:var(--gold)">(Mock)</span>';
+       }
+    }
+  } catch (e) {
+    console.warn("Could not check AI provider status", e);
+  }
+}
+
+// ─── SOCKET.IO REAL-TIME ──────────────────────────────────────
+function initSocket() {
+  SOCKET = io('http://localhost:3001');
+
+  SOCKET.on('connect', () => {
+    console.log('[Socket] Connected:', SOCKET.id);
+    SOCKET.emit('register', USER?.id);
+  });
+
+  SOCKET.on('registered', (data) => {
+    document.getElementById('statusDot').className  = 'status-dot online';
+    document.getElementById('statusText').textContent = 'Live • ' + (process?.env?.AI_PROVIDER || 'AI').toUpperCase();
+    showToast('⚡ Real-time', 'Live updates active', 'info');
+  });
+
+  SOCKET.on('notification', (payload) => {
+    addNotification(payload);
+    showToast(payload.title, payload.message, 'info');
+  });
+
+  SOCKET.on('ticket_update', (payload) => {
+    addNotification(payload);
+    showToast(payload.title, payload.message, 'success');
+    loadStats();
+    // Auto-refresh ticket table if on support tab
+    if (document.getElementById('tab-support').classList.contains('active')) {
+      loadTickets();
+      loadTicketChart();
+    }
+  });
+
+  SOCKET.on('candidate_update', (payload) => {
+    addNotification(payload);
+    showToast(payload.title, payload.message, 'info');
+    loadStats();
+    if (document.getElementById('tab-recruitment').classList.contains('active')) {
+      loadCandidates();
+      loadCandidateChart();
+    }
+  });
+
+  SOCKET.on('stats_update', (stats) => {
+    updateStatBar(stats);
+  });
+
+  SOCKET.on('disconnect', () => {
+    document.getElementById('statusDot').className  = 'status-dot offline';
+    document.getElementById('statusText').textContent = 'Reconnecting...';
+  });
+}
+
+// ─── SERVER CHECK ─────────────────────────────────────────────
+async function checkServerStatus() {
+  try {
+    const r = await fetch(`${API}/health`, { headers: headers() });
+    const d = await r.json();
+    document.getElementById('statSearch').textContent = d.searchProvider || 'Mock';
+  } catch {
+    document.getElementById('statusDot').className    = 'status-dot offline';
+    document.getElementById('statusText').textContent = 'Server offline';
+  }
+}
+
+// ─── STATS BAR ────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const [a, s, r] = await Promise.all([
+      apiFetch('/analyst/stats'),
+      apiFetch('/support/stats'),
+      apiFetch('/recruitment/stats'),
+    ]);
+    if (a) {
+      document.getElementById('statRevenue').textContent = a.totalRevenue ? '₹'+Number(a.totalRevenue).toLocaleString('en-IN') : '—';
+      document.getElementById('statOrders').textContent  = a.totalOrders  || '—';
+    }
+    if (s) document.getElementById('statTickets').textContent   = s.open        || '—';
+    if (r) { document.getElementById('statCandidates').textContent = r.total     || '—';
+             document.getElementById('statAvgScore').textContent   = r.avgScore  || '—'; }
+  } catch(e) { console.log('Stats err:', e.message); }
+}
+
+function updateStatBar(stats) {
+  // Flash updated values
+  const els = { statRevenue: stats.revenue, statTickets: stats.openTickets };
+  Object.entries(els).forEach(([id, val]) => {
+    if (!val) return;
+    const el = document.getElementById(id);
+    if (el) { el.textContent = val; el.classList.add('updated'); setTimeout(() => el.classList.remove('updated'), 1500); }
+  });
+}
+
+// ─── CHARTS ───────────────────────────────────────────────────
+const CHART_DEFAULTS = {
+  plugins: { legend: { labels: { color:'#7a8fa8', font:{size:10} } } },
+  scales:  { x:{ ticks:{color:'#4a5a72',font:{size:9}} , grid:{color:'#1e2736'} },
+             y:{ ticks:{color:'#4a5a72',font:{size:9}} , grid:{color:'#1e2736'} } }
+};
+
+function renderChart(canvasId, config) {
+  if (charts[canvasId]) charts[canvasId].destroy();
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx) return;
+  charts[canvasId] = new Chart(ctx, {
+    type: config.type || 'bar',
+    data: { labels: config.labels, datasets: config.datasets },
+    options: { responsive:true, maintainAspectRatio:false, ...CHART_DEFAULTS,
+      plugins: { ...CHART_DEFAULTS.plugins, legend:{...CHART_DEFAULTS.plugins.legend, display: config.type==='doughnut'} }
+    }
+  });
+}
+
+async function loadDashboardCharts() {
+  try {
+    const d = await apiFetch('/analyst/charts');
+    if (!d) return;
+    if (d.revenueByProduct) renderChart('chartProduct', d.revenueByProduct);
+    if (d.salesByRegion)    renderChart('chartRegion',  d.salesByRegion);
+    if (d.monthlySales)     renderChart('chartMonthly', d.monthlySales);
+  } catch(e) { console.log('Chart load err:', e.message); }
+}
+
+async function loadTicketChart() {
+  const d = await apiFetch('/support/chart');
+  if (d) renderChart('chartTickets', d);
+}
+
+async function loadCandidateChart() {
+  const d = await apiFetch('/recruitment/chart');
+  if (d) renderChart('chartCandidates', d);
+}
+
+// ─── TAB SWITCHING ────────────────────────────────────────────
+function switchTab(t) {
+  document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
+  document.getElementById(`tab-${t}`).classList.add('active');
+  document.querySelector(`.nav-btn[data-tab="${t}"]`).classList.add('active');
+  if (t==='support')     { loadTickets();    loadTicketChart(); }
+  if (t==='recruitment') { loadCandidates(); loadCandidateChart(); }
+  if (t==='research')    { loadSavedReports(); }
+}
+
+// ─── LOADING ──────────────────────────────────────────────────
+function showLoading(t='Processing...', s='AI agent is working') {
+  document.getElementById('loadingText').textContent = t;
+  document.getElementById('loadingSub').textContent  = s;
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+
+// ─── MARKDOWN RENDERER ────────────────────────────────────────
+function md(text) {
+  if (!text) return '';
+  return text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/\n\n/g,'<br/><br/>')
+    .replace(/\n/g,'<br/>');
+}
+
+// ─── TABLE RENDERER ───────────────────────────────────────────
+function makeTable(data) {
+  if (!data?.length) return '<div class="placeholder-text">No data found</div>';
+  const keys = Object.keys(data[0]);
+  let h = '<table class="data-table"><thead><tr>';
+  keys.forEach(k => h += `<th>${k.replace(/_/g,' ')}</th>`);
+  h += '</tr></thead><tbody>';
+  data.forEach(r => { h += '<tr>'; keys.forEach(k => { h += `<td>${r[k]??'—'}</td>`; }); h += '</tr>'; });
+  return h + '</tbody></table>';
+}
+
+function badge(val) {
+  const m = {'High':'badge-high','Low':'badge-low','Medium':'badge-medium','Open':'badge-open','Resolved':'badge-resolved','In Progress':'badge-progress','Selected':'badge-resolved','Shortlisted':'badge-medium','Pending':'badge-progress'};
+  return `<span class="badge ${m[val]||''}">${val}</span>`;
+}
+
+// ─── TOAST NOTIFICATIONS ──────────────────────────────────────
+function showToast(title, msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<div class="toast-icon">${type==='success'?'✅':type==='warning'?'⚠️':'💬'}</div>
+    <div class="toast-body"><div class="toast-title">${title}</div><div class="toast-msg">${msg}</div></div>`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(20px)'; t.style.transition='all .3s'; setTimeout(()=>t.remove(),300); }, 4000);
+}
+
+// ─── NOTIFICATION PANEL ───────────────────────────────────────
+function addNotification(payload) {
+  notifications.unshift({ ...payload, time: new Date().toLocaleTimeString(), read: false });
+  const badge = document.getElementById('notifBadge');
+  const count = notifications.filter(n=>!n.read).length;
+  badge.textContent = count;
+  badge.style.display = count > 0 ? 'flex' : 'none';
+  renderNotifList();
+}
+
+function renderNotifList() {
+  const list = document.getElementById('notifList');
+  if (!notifications.length) { list.innerHTML = '<div class="notif-empty">No notifications yet</div>'; return; }
+  list.innerHTML = notifications.slice(0,10).map(n => `
+    <div class="notif-item ${n.read?'':'unread'}">
+      <div class="notif-title">${n.title||'Update'}</div>
+      <div class="notif-msg">${n.message||''}</div>
+      <div class="notif-time">${n.time||''}</div>
+    </div>`).join('');
+}
+
+function toggleNotifPanel() {
+  const p = document.getElementById('notifPanel');
+  p.classList.toggle('open');
+  notifications.forEach(n => n.read = true);
+  document.getElementById('notifBadge').style.display = 'none';
+}
+
+function clearNotifications() {
+  notifications.length = 0;
+  document.getElementById('notifBadge').style.display = 'none';
+  renderNotifList();
+}
+
+// ─── USER MENU ────────────────────────────────────────────────
+function toggleUserMenu() {
+  document.getElementById('userDropdown').classList.toggle('open');
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.user-menu')) {
+    document.querySelectorAll('.user-dropdown, .notif-panel').forEach(el => el.classList.remove('open'));
+  }
+});
+
+// ─── LANGUAGE CHANGE ──────────────────────────────────────────
+async function changeLang(lang) {
+  await apiFetch('/auth/lang', { method:'PATCH', body: JSON.stringify({lang}) });
+  if (USER) { USER.lang = lang; localStorage.setItem('nexus_user', JSON.stringify(USER)); }
+  translateUI(lang);
+  showToast('🌍 Language Changed', `AI & Interface now set to ${lang.toUpperCase()}`, 'success');
+}
+
+// ══════════════════════════════════════════════════════════════
+// AGENT 1: ANALYST
+// ══════════════════════════════════════════════════════════════
+function setQ(q) { document.getElementById('analystQ').value = q; }
+
+async function runAnalyst() {
+  const question = document.getElementById('analystQ').value.trim();
+  if (!question) { alert('Enter a business question'); return; }
+  showLoading('Analyzing Data...', 'Converting to SQL and generating AI insights');
+  document.getElementById('analystBtn').disabled = true;
+
+  try {
+    const d = await apiFetch('/analyst/query', { method:'POST', body: JSON.stringify({question}) });
+    if (!d) return;
+
+    document.getElementById('analystSQL').textContent = d.sql || '—';
+    document.getElementById('analystCount').textContent = `${d.rowCount} rows`;
+    document.getElementById('analystTable').innerHTML  = makeTable(d.results);
+    document.getElementById('analystInsights').innerHTML = md(d.insights || 'No insights');
+    lastAnalystData = { question, sql: d.sql, results: d.results, insights: d.insights }; 
+    document.getElementById('exportAnalystBtn').style.display = 'inline-block';
+
+    // Render dynamic chart from query result
+    if (d.chartData) {
+      document.getElementById('queryChartWrap').style.display = 'block';
+      document.getElementById('analystChartType').textContent = d.chartData.type + ' chart';
+      document.getElementById('analystChartType').style.display = 'inline-block';
+      renderChart('queryChart', d.chartData);
+    } else {
+      document.getElementById('queryChartWrap').style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('analystInsights').innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+  } finally { hideLoading(); document.getElementById('analystBtn').disabled = false; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// AGENT 2: SUPPORT
+// ══════════════════════════════════════════════════════════════
+function setIssue(i) { document.getElementById('supIssue').value = i; }
+
+async function runSupport() {
+  const customerName  = document.getElementById('supCust').value.trim();
+  const customerEmail = document.getElementById('supEmail').value.trim();
+  const issue         = document.getElementById('supIssue').value.trim();
+  if (!issue) { alert('Describe the issue'); return; }
+  showLoading('Support Agent Working...', 'Looking up customer and drafting response');
+  document.getElementById('supportBtn').disabled = true;
+
+  try {
+    const d = await apiFetch('/support/query', { method:'POST', body: JSON.stringify({customerName, customerEmail, issue}) });
+    if (!d) return;
+
+    document.getElementById('supResponse').innerHTML = md(d.response);
+    if (d.ticket) {
+      document.getElementById('ticketCard').style.display = 'block';
+      document.getElementById('tktId').textContent    = d.ticket.id;
+      document.getElementById('tktPri').textContent   = d.ticket.priority;
+      document.getElementById('tktEmail').textContent = d.ticket.emailSent ? '✅ Sent' : '—';
+      document.getElementById('tktDate').textContent  = d.ticket.createdAt;
+    }
+    loadTickets(); loadTicketChart(); loadStats();
+  } catch(e) {
+    document.getElementById('supResponse').innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+  } finally { hideLoading(); document.getElementById('supportBtn').disabled = false; }
+}
+
+async function loadTickets() {
+  try {
+    const d = await apiFetch('/support/tickets');
+    if (!d?.tickets?.length) { document.getElementById('ticketsTable').innerHTML = '<div class="placeholder-text">No tickets found</div>'; return; }
+    let h = `<table class="data-table"><thead><tr><th>Ticket ID</th><th>Customer</th><th>Issue</th><th>Status</th><th>Priority</th><th>Created</th><th>Action</th></tr></thead><tbody>`;
+    d.tickets.forEach(t => {
+      const short = t.issue.length > 35 ? t.issue.substring(0,35)+'…' : t.issue;
+      h += `<tr>
+        <td><code style="color:var(--analyst)">${t.ticket_id}</code></td>
+        <td>${t.customer}</td><td title="${t.issue}">${short}</td>
+        <td>${badge(t.status)}</td><td>${badge(t.priority)}</td><td>${t.created_at}</td>
+        <td><select onchange="updateTicket('${t.ticket_id}',this.value)" style="font-size:.62rem;padding:.15rem;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px">
+          <option ${t.status==='Open'?'selected':''}>Open</option>
+          <option ${t.status==='In Progress'?'selected':''}>In Progress</option>
+          <option ${t.status==='Resolved'?'selected':''}>Resolved</option>
+        </select></td></tr>`;
+    });
+    document.getElementById('ticketsTable').innerHTML = h + '</tbody></table>';
+  } catch(e) { document.getElementById('ticketsTable').innerHTML = `<span style="color:var(--danger)">Error: ${e.message}</span>`; }
+}
+
+async function updateTicket(id, status) {
+  await apiFetch(`/support/tickets/${id}`, { method:'PATCH', body: JSON.stringify({status}) });
+  loadStats();
+}
+
+// ══════════════════════════════════════════════════════════════
+// AGENT 3: RECRUITMENT
+// ══════════════════════════════════════════════════════════════
+function handleFileSelect(input) {
+  const f = input.files[0];
+  if (!f) return;
+  const lbl = document.getElementById('fileLabel');
+  lbl.textContent = `📄 ${f.name} (${(f.size/1024).toFixed(1)}KB)`;
+  lbl.classList.add('has-file');
+  document.getElementById('clearResumeBtn').style.display = 'inline-block';
+  showToast('📁 File Selected', `${f.name} will be parsed on evaluate`, 'info');
+}
+
+function clearResume() {
+  const input = document.getElementById('recruitResume');
+  if (input) input.value = '';
+  const lbl = document.getElementById('fileLabel');
+  if (lbl) {
+    lbl.textContent = '📎 Click to upload resume file (auto-parses skills & experience)';
+    lbl.classList.remove('has-file');
+  }
+  const btn = document.getElementById('clearResumeBtn');
+  if (btn) btn.style.display = 'none';
+  const info = document.getElementById('parsedInfo');
+  if (info) info.style.display = 'none';
+  showToast('🗑️ Resume Cleared', 'File removed', 'info');
+}
+
+async function runEvaluate() {
+  const name  = document.getElementById('cName').value.trim();
+  const role  = document.getElementById('cRole').value;
+  if (!name || !role) { alert('Name and Applied Role are required'); return; }
+  showLoading('Evaluating Candidate...', 'Parsing resume and running AI analysis');
+  document.getElementById('recruitBtn').disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('email', document.getElementById('cEmail').value);
+    formData.append('phone', document.getElementById('cPhone').value);
+    formData.append('skills', document.getElementById('cSkills').value);
+    formData.append('experience', document.getElementById('cExp').value);
+    formData.append('education', document.getElementById('cEdu').value);
+    formData.append('appliedRole', role);
+    
+    const fileInput = document.getElementById('recruitResume');
+    if (!fileInput) {
+      console.error("DOM Error: recruitResume input not found");
+      throw new Error("UI Component Error: Could not find resume input element. Please refresh the page.");
+    }
+
+    const file = fileInput.files ? fileInput.files[0] : null;
+    if (file) formData.append('resumeFile', file);
+
+    // Use fetch directly (not apiFetch) because of FormData
+    const res = await fetch(`${API}/recruitment/evaluate`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${TOKEN}` }, // NO Content-Type (let browser set boundary)
+      body: formData
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Evaluation failed');
+
+    lastCandidateId = d.candidateId;
+
+    document.getElementById('scoreCard').style.display = 'flex';
+    document.getElementById('scoreValue').textContent  = d.score;
+    document.getElementById('scoreStatus').textContent = d.status;
+    document.getElementById('scoreStatus').style.color = d.status==='Selected'?'var(--success)':d.status==='Shortlisted'?'var(--gold)':'var(--text2)';
+    document.getElementById('scoreRole').textContent   = role;
+    document.getElementById('recruitResult').innerHTML = md(d.evaluation);
+    document.getElementById('exportRecruitBtn').style.display = 'inline-block';
+    document.getElementById('exportRecruitBtn').style.display = 'inline-block';
+
+    if (d.parsedFromFile) {
+      document.getElementById('parsedInfo').style.display = 'block';
+      document.getElementById('parsedDetail').textContent =
+        `Skills: ${d.parsedFromFile.skills||'—'} | Exp: ${d.parsedFromFile.experience||0}y | Edu: ${d.parsedFromFile.education||'—'}`;
+    }
+
+    document.getElementById('scheduleSection').style.display = 'block';
+    loadCandidates(); loadCandidateChart(); loadStats();
+
+  } catch(e) {
+    document.getElementById('recruitResult').innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+  } finally { hideLoading(); document.getElementById('recruitBtn').disabled = false; }
+}
+
+async function runSchedule() {
+  if (!lastCandidateId) { alert('Evaluate a candidate first'); return; }
+  const scheduledAt  = document.getElementById('iDate').value;
+  const interviewer  = document.getElementById('iInterviewer').value.trim();
+  const mode         = document.getElementById('iMode').value;
+  if (!scheduledAt || !interviewer) { alert('Fill interview date and interviewer name'); return; }
+  showLoading('Scheduling Interview...', 'Booking slot and sending email notification');
+  try {
+    const d = await apiFetch('/recruitment/schedule', { method:'POST', body: JSON.stringify({candidateId:lastCandidateId, scheduledAt, interviewer, mode}) });
+    if (!d) return;
+    const el = document.getElementById('scheduleResult');
+    el.style.display = 'block';
+    el.innerHTML = `✅ Interview scheduled! Email ${d.emailSent ? 'sent ✉️' : 'not sent (no email on file)'}<br>
+      👤 ${d.candidate} | 📅 ${scheduledAt} | 🎤 ${interviewer} | 📍 ${mode}`;
+    loadCandidates();
+  } catch(e) { alert('Error: ' + e.message); }
+  finally { hideLoading(); }
+}
+
+async function loadCandidates() {
+  try {
+    const d = await apiFetch('/recruitment/candidates');
+    if (!d?.candidates?.length) { document.getElementById('candidatesTable').innerHTML = '<div class="placeholder-text">No candidates yet</div>'; return; }
+    let h = `<table class="data-table"><thead><tr><th>#</th><th>Name</th><th>Role</th><th>Skills</th><th>Exp</th><th>Score</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
+    d.candidates.forEach((c,i) => {
+      const sk = c.skills.length>32?c.skills.substring(0,32)+'…':c.skills;
+      const sc = c.score>=85?'var(--success)':c.score>=60?'var(--gold)':'var(--text2)';
+      h += `<tr><td style="color:var(--text3)">${i+1}</td><td><strong>${c.name}</strong></td>
+        <td>${c.applied_role}</td><td title="${c.skills}">${sk}</td>
+        <td>${c.experience}y</td><td><strong style="color:${sc}">${c.score}</strong></td>
+        <td>${badge(c.status)}</td><td>${c.applied_on}</td></tr>`;
+    });
+    document.getElementById('candidatesTable').innerHTML = h + '</tbody></table>';
+  } catch(e) { document.getElementById('candidatesTable').innerHTML = `<span style="color:var(--danger)">Error: ${e.message}</span>`; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// AGENT 4: RESEARCH
+// ══════════════════════════════════════════════════════════════
+function setTopic(t) { document.getElementById('resTopic').value = t; }
+
+async function runResearch() {
+  const topic = document.getElementById('resTopic').value.trim();
+  if (!topic) { alert('Enter a research topic'); return; }
+  showLoading('Researching Topic...', 'Running web search and synthesizing report');
+  document.getElementById('researchBtn').disabled = true;
+  document.getElementById('sourcesPanel').style.display = 'none';
+  document.getElementById('reportMeta').style.display   = 'none';
+
+  try {
+    const d = await apiFetch('/research/query', { method:'POST', body: JSON.stringify({topic}) });
+    if (!d) return;
+
+    document.getElementById('resReport').innerHTML = md(d.report);
+
+    if (d.sources?.length) {
+      document.getElementById('sourcesPanel').style.display = 'block';
+      document.getElementById('sourcesList').innerHTML = d.sources.map((s,i) => `
+        <div class="source-item">
+          <div class="source-title">${i+1}. ${s.title}
+            ${s.published ? `<span class="source-badge">${s.published}</span>` : ''}
+          </div>
+          <div class="source-url">🔗 <a href="${s.url}" target="_blank" style="color:var(--analyst)">${s.url.substring(0,60)}...</a></div>
+          <div class="source-summary">${s.summary.substring(0,130)}...</div>
+        </div>`).join('');
+    }
+
+    document.getElementById('reportMeta').style.display = 'block';
+    document.getElementById('reportTime').textContent    = `Generated: ${d.generatedAt}`;
+    document.getElementById('reportProvider').textContent = `🔍 ${d.provider}`;
+    loadSavedReports();
+  } catch(e) {
+    document.getElementById('resReport').innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+  } finally { hideLoading(); document.getElementById('researchBtn').disabled = false; }
+}
+
+async function loadSavedReports() {
+  try {
+    const d = await apiFetch('/research/reports');
+    const el = document.getElementById('savedReportsList');
+    if (!d?.reports?.length) { el.innerHTML = '<div class="placeholder-text">No saved reports yet</div>'; return; }
+    el.innerHTML = d.reports.map(r => `
+      <div class="report-list-item" onclick="loadReport(${r.id})">
+        <span>📄 ${r.topic.substring(0,30)}</span>
+        <span style="color:var(--text3);font-size:.62rem">${r.created_at.substring(0,10)}</span>
+      </div>`).join('');
+  } catch(e) { console.log('Saved reports err:', e.message); }
+}
+
+async function loadReport(id) {
+  showLoading('Loading Report...', '');
+  try {
+    const d = await apiFetch(`/research/reports/${id}`);
+    if (d?.report) {
+      document.getElementById('resTopic').value   = d.report.topic;
+      document.getElementById('resReport').innerHTML = md(d.report.report);
+      document.getElementById('reportMeta').style.display = 'block';
+      document.getElementById('reportTime').textContent = `Saved: ${d.report.created_at}`;
+      document.getElementById('reportProvider').textContent = '📂 Saved Report';
+    }
+  } catch(e) { console.log('Load report err:', e.message); }
+  finally { hideLoading(); }
+}
+
+// ─── PDF EXPORT LOGIC ─────────────────────────────────────────
+async function exportAnalystPDF() {
+  if (!lastAnalystData) return;
+  showLoading('Generating PDF...', 'Creating analysis report');
+  try {
+    const res = await fetch(`${API}/analyst/export-pdf`, {
+      method: 'POST',
+      headers: { ...headers() },
+      body: JSON.stringify(lastAnalystData)
+    });
+    if (!res.ok) throw new Error('PDF export failed');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `NexusAI_Report_${new Date().getTime()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    showToast('✅ PDF Exported', 'Report downloaded successfully', 'success');
+  } catch(e) { showToast('❌ Export Failed', e.message, 'warning'); }
+  finally { hideLoading(); }
+}
+
+async function exportRecruitmentPDF() {
+  if (!lastCandidateId) return;
+  showLoading('Generating PDF...', 'Creating evaluation report');
+  try {
+    const res = await fetch(`${API}/recruitment/export-pdf/${lastCandidateId}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${TOKEN}` }
+    });
+    if (!res.ok) throw new Error('PDF export failed');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Evaluation_Report_${lastCandidateId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    showToast('✅ PDF Exported', 'Evaluation downloaded successfully', 'success');
+  } catch(e) { showToast('❌ Export Failed', e.message, 'warning'); }
+  finally { hideLoading(); }
+}
+
+// ─── VOICE SEARCH LOGIC ───────────────────────────────────────
+function startVoice(targetId) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('🚨 Voice Not Supported', 'Your browser does not support voice-to-text', 'warning');
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  const btn = event.currentTarget;
+  const input = document.getElementById(targetId);
+
+  // Set language based on app selector
+  const lang = document.getElementById('langSelect').value || 'en';
+  recognition.lang = lang === 'en' ? 'en-US' : (lang === 'ta' ? 'ta-IN' : (lang === 'hi' ? 'hi-IN' : 'en-US'));
+  
+  recognition.onstart = () => {
+    btn.classList.add('listening');
+    showToast('🎙️ Listening...', 'Speak your question now', 'info');
+  };
+
+  recognition.onerror = (e) => {
+    btn.classList.remove('listening');
+    showToast('❌ Voice Error', e.error || 'Failed to capture audio', 'warning');
+  };
+
+  recognition.onend = () => {
+    btn.classList.remove('listening');
+  };
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    input.value = transcript;
+    showToast('✅ Transcription Done', 'Text updated successfully', 'success');
+    // If it's the research or analyst, maybe auto-focus?
+    input.focus();
+  };
+
+  recognition.start();
+}
+
+// ─── TRANSLATION LOGIC (i18n) ─────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    analyst: "🧠 Analyst", support: "🎧 Support", recruit: "👔 Recruit", research: "🔍 Research",
+    rev: "Revenue", ord: "Orders", tkt: "Open Tickets", cand: "Candidates", avg: "Avg Score",
+    ask: "Ask Your Question", gen_sql: "Generated SQL", insights: "🤖 AI Business Insights",
+    analyze_btn: "⚡ ANALYZE", cust_name: "Customer Name", cust_issue: "Describe the Issue",
+    submit_btn: "💬 SUBMIT ISSUE", evaluate_btn: "⚡ EVALUATE", research_topic: "Research Topic",
+    start_research: "🔍 START RESEARCH", logout: "🚪 Logout",
+  },
+  ta: {
+    analyst: "🧠 ஆய்வாளர்", support: "🎧 ஆதரவு", recruit: "👔 வேலைவாய்ப்பு", research: "🔍 ஆராய்ச்சி",
+    rev: "வருவாய்", ord: "ஆர்டர்கள்", tkt: "டிக்கெட்டுகள்", cand: "வேட்பாளர்கள்", avg: "சராசரி மதிப்பெண்",
+    ask: "உங்கள் கேள்வியைக் கேளுங்கள்", gen_sql: "உருவாக்கப்பட்ட SQL", insights: "🤖 AI வணிக நுண்ணறிவு",
+    analyze_btn: "⚡ பகுப்பாய்வு", cust_name: "வாடிக்கையாளர் பெயர்", cust_issue: "சிக்கலை விவரிக்கவும்",
+    submit_btn: "💬 சமர்ப்பிக்கவும்", evaluate_btn: "⚡ மதிப்பீடு", research_topic: "ஆராய்ச்சி தலைப்பு",
+    start_research: "🔍 ஆராய்ச்சியைத் தொடங்கு", logout: "🚪 வெளியேறு",
+  },
+  hi: {
+    analyst: "🧠 विश्लेषक", support: "🎧 समर्थन", recruit: "👔 भर्ती", research: "🔍 अनुसंधान",
+    rev: "राजस्व", ord: "आदेश", tkt: "टिकट", cand: "उम्मीदवार", avg: "औसत स्कोर",
+    ask: "अपना प्रश्न पूछें", gen_sql: "जेनरेट किया गया SQL", insights: "🤖 AI बिजनेस इनसाइट्स",
+    analyze_btn: "⚡ विश्लेषण करें", cust_name: "ग्राहक का नाम", cust_issue: "मुद्दे का वर्णन करें",
+    submit_btn: "💬 सबमिट करें", evaluate_btn: "⚡ मूल्यांकन", research_topic: "अनुसंधान विषय",
+    start_research: "🔍 अनुसंधान शुरू करें", logout: "🚪 लॉगआउट करें",
+  }
+};
+
+function translateUI(lang) {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
+  showToast('🌍 Interface Translated', `UI set to ${lang.toUpperCase()}`, 'info');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // If already logged in, show app directly
+  if (TOKEN && USER) {
+    showApp();
+  }
+  // Keyboard shortcuts
+  document.getElementById('analystQ')?.addEventListener('keydown', e => { if(e.key==='Enter'&&e.ctrlKey) runAnalyst(); });
+  document.getElementById('supIssue')?.addEventListener('keydown', e => { if(e.key==='Enter'&&e.ctrlKey) runSupport(); });
+  document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('resTopic')?.addEventListener('keydown', e => { if(e.key==='Enter') runResearch(); });
+});
+// ─── INITIALIZE ────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (TOKEN && USER) {
+    showApp();
+  } else {
+    loadQuickLoginUsers();
+  }
+});
+</script>
+</body>
+</html>
